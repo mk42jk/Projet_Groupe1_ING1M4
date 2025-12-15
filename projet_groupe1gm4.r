@@ -407,9 +407,6 @@ fviz_eig(A.ca,addlabels = T)
 A.ca$row$contrib[,1] #numérique
 fviz_contrib(A.ca, choice = "row", axes =1) #graphique 
 
-#ex1.ca$row$coord[,1] #numérique on a les signes 
-#plot(ex1.ca) #graphique 
-
 fviz_contrib(A.ca,choice="col",axes=1)
 
 fviz_contrib(A.ca,choice="row",axes=2)
@@ -441,4 +438,13 @@ library(factoextra)
 res.afc <- CA(tab_afc, graph = FALSE)
 fviz_ca_biplot(res.afc, repel = TRUE)
 
+fviz_contrib(res.afc, choice = "row", axes =1) #graphique 
+
+fviz_contrib(res.afc,choice="col",axes=1)
+
+fviz_contrib(res.afc,choice="row",axes=2)
+fviz_contrib(res.afc,choice="col",axes=2)
+
+
 #####Les modalités proches sont associées
+
