@@ -374,6 +374,7 @@ res=chisq.test(mat) #test de khi-2
 res$statistic # khi 2
 res$parameter # ddl
 qchisq(0.95, res$parameter) # seuil, on fixe alpha=0.05
+resp$p.value #0.4595 > 0.05
 
 #khi-2 = 14.88 < 24.99579 les deux variables sont indépendantes 
 
