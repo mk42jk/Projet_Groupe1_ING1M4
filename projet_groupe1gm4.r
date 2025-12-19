@@ -113,7 +113,12 @@ hist(projet$Qualite_Sommeil,
 # temps d'écran x stress
 
 # Corrélation
-cor(projet$Stress, projet$Temps_Ecran) # 0.739
+
+mod <- lm(projet$Stress ~ projet$Temps_Ecran)
+summary(mod) #R^2 = 0.547
+
+cor(projet$Stress, projet$Temps_Ecran)# 0.739
+
 
 # nuage de points
 plot(projet$Temps_Ecran, projet$Stress,
@@ -175,6 +180,8 @@ n
 # stress x qualité du sommeil
 
 cor(projet$Qualite_Sommeil, projet$Stress) # -0.584 
+R2 = cor(projet$Qualite_Sommeil, projet$Stress)^2
+R2 # 0.342
 
 plot(projet$Stress, projet$Qualite_Sommeil,
      main = "Qualité du sommeil en fonction du stress",
@@ -191,6 +198,8 @@ abline(lm(Qualite_Sommeil ~ Stress, data = projet), col = "red", lwd = 4)
 # stress x bonheur
 
 cor(projet$Stress, projet$Bonheur) # -0.73721
+R3=cor(projet$Stress, projet$Bonheur)^2
+R3 # 0.543
 
 plot(projet$Stress, projet$Bonheur,
      xlab="Stress", ylab="Bonheur",
@@ -203,6 +212,9 @@ abline(lm(Bonheur ~ Stress, data=projet), col="red", lwd=4)
 # temps d'écran x sommeil
 
 cor(projet$Temps_Ecran, projet$Qualite_Sommeil) # -0.7589
+R4=cor(projet$Temps_Ecran, projet$Qualite_Sommeil)^2
+R4 # 0.576
+
 plot(projet$Temps_Ecran, projet$Qualite_Sommeil,
      xlab="Temps d'écran (h/j)", ylab="Qualité du sommeil",
      main="Sommeil en fonction du temps d'écran",
@@ -306,6 +318,8 @@ par(mfrow=c(1,1))
 
 
 ### ACP ###
+library(FactoMineR)
+library(factoextra)
 
 vars_acp <- projet[, c("Bonheur", "Temps_Ecran", "Qualite_Sommeil", "Jours_Sans_Reseaux", "Stress", "Sport")]
 
@@ -322,15 +336,22 @@ coord_var
 couleurs <- c("red", "orange", "dodgerblue", "#4DAF4A", "purple", "#F781BF")
 
 theta <- seq(0, 2*pi, length=100)
-plot(cos(theta), sin(theta), type="l", asp=1, xlab="PC1", ylab="PC2", main="Cercle des corrélations")
+plot(cos(theta), sin(theta),
+     type = "l", asp = 1,
+     xlab = paste0("PC1 (", round(summary(acp)$importance[2,1] * 100, 1), " %)"),
+     ylab = paste0("PC2 (", round(summary(acp)$importance[2,2] * 100, 1), " %)"),
+     main = "Cercle des corrélations")
 
 arrows(0, 0, coord_var[,1], coord_var[,2], length=0.1, col=couleurs, lwd=3)
 
 pos_vect <- c(3, 4, 2, 1, 4, 3)
 text(coord_var[,1], coord_var[,2], labels=rownames(coord_var), pos=pos_vect, col=couleurs)
+fviz_eig(acp,addlabels = T)
+
 ####conclusion : sport et jours sans reseaux ne sont pas pertinentes
 
 ### AFC ###
+
 
 # age x plateforme
 
@@ -348,18 +369,19 @@ Lin =prop.table (mat, 1) # profils lignes
 Col = prop.table (mat, 2) # profils colonnes
 Lin
 Col
+
 res=chisq.test(mat) #test de khi-2
 res$statistic # khi 2
 res$parameter # ddl
 qchisq(0.95, res$parameter) # seuil, on fixe alpha=0.05
 
-#khi-2 = 14.88 < 24.99579 les deux sont independantes 
-sum(tab) # sum(tab) # n= 500 > 30 fiables
-res$expected
+#khi-2 = 14.88 < 24.99579 les deux variables sont indépendantes 
 
-#chi <- chisq.test(tab)
-#chi###p=0.45 
-
+#vérifier conditions test
+sum(tab) # n= 500 > 30 fiable
+res$expected # effectifs théoriques t_ij > 5
+min(res$expected) # 11.1 > 5
+#le test est fiable 
 
 moyLin = colSums(mat)/sum(mat)
 moyLin
@@ -399,20 +421,21 @@ install.packages("factoextra")
 library(FactoMineR)
 library(factoextra)
 
-A.ca =CA(A)
-A.ca$eig #on a besoin de 4 axes pour avoir >70% khi-2
-fviz_eig(A.ca,addlabels = T)
+mat.ca =CA(mat)
+mat.ca$eig #on a besoin de 4 axes pour avoir >70% khi-2
+fviz_eig(mat.ca,addlabels = T)
 
 
-A.ca$row$contrib[,1] #numérique
-fviz_contrib(A.ca, choice = "row", axes =1) #graphique 
+mat.ca$row$contrib[,1] #numérique
+fviz_contrib(mat.ca, choice = "row", axes =1) #graphique 
 
-fviz_contrib(A.ca,choice="col",axes=1)
+fviz_contrib(mat.ca,choice="col",axes=1)
 
-fviz_contrib(A.ca,choice="row",axes=2)
-fviz_contrib(A.ca,choice="col",axes=2)
+fviz_contrib(mat.ca,choice="row",axes=2)
+fviz_contrib(mat.ca,choice="col",axes=2)
 
 # afc stress et temps d'écran 
+
 projet$Stress_cat <- cut(
   projet$Stress,
   breaks = c(-Inf, 3, 6, Inf),
@@ -425,9 +448,6 @@ projet$TempsEcran_cat <- cut(
   labels = c("mauvais", "moyen", "bon")
 )
 
-length(projet$Stress_cat)
-length(projet$TempsEcran_cat)
-
 projet_clean <- projet[complete.cases(projet$Stress_cat, projet$TempsEcran_cat), ]
 tab_afc <- table(projet_clean$Stress_cat, projet_clean$TempsEcran_cat)
 chisq.test(tab_afc)
@@ -437,7 +457,10 @@ library(factoextra)
 
 res.afc <- CA(tab_afc, graph = FALSE)
 fviz_ca_biplot(res.afc, repel = TRUE)
+fviz_eig(res.afc,addlabels = T)
 
+
+res.afc$row$contrib[,1] #numérique
 fviz_contrib(res.afc, choice = "row", axes =1) #graphique 
 
 fviz_contrib(res.afc,choice="col",axes=1)
@@ -445,6 +468,4 @@ fviz_contrib(res.afc,choice="col",axes=1)
 fviz_contrib(res.afc,choice="row",axes=2)
 fviz_contrib(res.afc,choice="col",axes=2)
 
-
 #####Les modalités proches sont associées
-
